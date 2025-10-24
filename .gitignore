@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+.venv/
+venv/
+.Python
+
+# Editor directories
+.vscode/
+.idea/
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Project artifacts
+images/
+images*/
+*.jsonl
+printable*.html
+exports/
+
+# Playwright caches and browsers
+.playwright/
+
+# pytest cache
+.pytest_cache/
+

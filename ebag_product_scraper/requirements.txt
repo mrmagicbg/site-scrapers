@@ -1,0 +1,6 @@
+# Core scraper dependencies
+beautifulsoup4==4.12.2
+requests==2.31.0
+
+# For full functionality, install main project requirements:
+# pip install -r ../requirements.txt

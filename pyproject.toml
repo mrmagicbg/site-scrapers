@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "site-scrapers"
+version = "2.0.0"
+description = "Optimized product scrapers with 98%+ quantity extraction and Bulgarian language support."
+authors = [ { name = "ivan-madjarov" } ]
+dependencies = [
+  "beautifulsoup4==4.12.2",
+  "requests==2.31.0",
+  "Pillow==10.1.0",
+]
+optional-dependencies = [
+  "playwright>=1.40.0",
+  "pytest>=7.0.0",
+]
