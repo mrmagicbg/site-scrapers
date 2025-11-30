@@ -97,3 +97,7 @@ All notable changes to this project are documented in this file.
 - BeautifulSoup4, requests for core functionality  
 - Playwright (optional) for JavaScript rendering and PDF export
 - Pillow for image processing and thumbnails
+
+## [2.1.1] - 2025-11-30
+### Changed
+- Documentation: added last-updated marker and minor metadata fixes.

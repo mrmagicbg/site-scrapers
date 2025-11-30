@@ -149,3 +149,7 @@ Recent tests show **97.5-100%** quantity extraction across all product categorie
 ## License
 
 MIT
+
+---
+
+**Last updated:** 2025-11-30
