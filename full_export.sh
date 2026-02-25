@@ -19,7 +19,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-cd /home/mrmagic/Code/GitHub/site-scrapers
+# Navigate to project root regardless of from where the script is invoked
+cd "$(dirname "$(realpath "$0")")"
 
 echo "========================================"
 echo "    FULL EXPORT - ALL 55 CATEGORIES"

@@ -199,11 +199,8 @@ def process_urls(urls: Iterable[str], out_path: str | None, out_format: str = "j
     session = requests.Session()
     results = []
     writer_csv = None
-    csv_file = None
-
-    if out_path and out_format == "csv":
-        csv_file = open(out_path, "w", newline="", encoding="utf-8")
-        writer_csv = None
+    # Open CSV file early; use try/finally to guarantee it is closed even on error.
+    csv_file = open(out_path, "w", newline="", encoding="utf-8") if (out_path and out_format == "csv") else None
 
     def write_record(record: dict):
         if out_path is None or out_path == "-":
@@ -226,89 +223,91 @@ def process_urls(urls: Iterable[str], out_path: str | None, out_format: str = "j
                 writer_csv.writeheader()
             writer_csv.writerow(record)
 
-    for url in urls:
-        try:
-            # Hybrid approach: Try fast HTTP first, fallback to Playwright if quantity missing
-            html = fetch_html(url, session, delay=delay)
-            info = extract_product_info(html)
-            
-            # If no quantity found with basic HTTP, try Playwright for JavaScript-rendered content
-            if not info.get('quantity_raw'):
-                try:
-                    from ebag_product_scraper.scraper import load_html_from_url
-                    html = load_html_from_url(url)
-                    info = extract_product_info(html)
-                except Exception:
-                    # If Playwright fails, keep the basic HTTP results
-                    pass
-        except Exception as exc:
-            record = {"url": url, "error": str(exc)}
-            write_record(record)
-            continue
-        record = {"url": url, **info}
-        # optionally download image and create a thumbnail if requested via CLI arg
-        imgs_dir = images_dir
-        if imgs_dir and info.get("image"):
+    try:
+        for url in urls:
             try:
-                img_url = info.get("image")
-                # sanitize filename
-                parsed = urlparse(img_url)
-                orig_name = Path(parsed.path).name
-                target_dir = Path(imgs_dir)
-                target_dir.mkdir(parents=True, exist_ok=True)
-                # determine extension: prefer existing extension, otherwise infer from content-type
-                ext = Path(orig_name).suffix
-                r = session.get(img_url, headers={"User-Agent": DEFAULT_USER_AGENT}, timeout=15)
-                r.raise_for_status()
-                if not ext:
-                    ctype = r.headers.get("Content-Type", "")
-                    if "jpeg" in ctype or "jpg" in ctype:
-                        ext = ".jpg"
-                    elif "png" in ctype:
-                        ext = ".png"
-                    elif "webp" in ctype:
-                        ext = ".webp"
-                    else:
-                        ext = ".jpg"
-                # prefer using product code for filename to avoid collisions
-                codefn = info.get("code") or None
-                if codefn:
-                    filename = f"{codefn}{ext}"
-                else:
-                    filename = orig_name + ext if not Path(orig_name).suffix else orig_name
-                img_path = target_dir / filename
-                # write image to disk
-                with open(img_path, "wb") as f:
-                    f.write(r.content)
-                record["image_local"] = str(img_path)
-                # create thumbnail preview
-                if PIL_AVAILABLE:
+                # Hybrid approach: Try fast HTTP first, fallback to Playwright if quantity missing
+                html = fetch_html(url, session, delay=delay)
+                info = extract_product_info(html)
+
+                # If no quantity found with basic HTTP, try Playwright for JavaScript-rendered content
+                if not info.get('quantity_raw'):
                     try:
-                        with Image.open(io.BytesIO(r.content)) as im:
-                            im.thumbnail((thumb_size, thumb_size))
-                            preview_name = img_path.stem + "_preview" + img_path.suffix
-                            preview_path = target_dir / preview_name
-                            # infer format from extension
-                            fmt = None
-                            sfx = img_path.suffix.lower()
-                            if sfx in (".jpg", ".jpeg"):
-                                fmt = "JPEG"
-                            elif sfx == ".png":
-                                fmt = "PNG"
-                            elif sfx == ".webp":
-                                fmt = "WEBP"
-                            im.save(preview_path, format=fmt) if fmt else im.save(preview_path)
-                            record["image_preview_local"] = str(preview_path)
+                        from ebag_product_scraper.scraper import load_html_from_url
+                        html = load_html_from_url(url)
+                        info = extract_product_info(html)
                     except Exception:
-                        # continue without preview
+                        # If Playwright fails, keep the basic HTTP results
                         pass
             except Exception as exc:
-                record["image_error"] = str(exc)
-        write_record(record)
-        time.sleep(delay)
-
-    if csv_file:
-        csv_file.close()
+                record = {"url": url, "error": str(exc)}
+                write_record(record)
+                continue
+            record = {"url": url, **info}
+            # optionally download image and create a thumbnail if requested via CLI arg
+            imgs_dir = images_dir
+            if imgs_dir and info.get("image"):
+                try:
+                    img_url = info.get("image")
+                    # sanitize filename
+                    parsed = urlparse(img_url)
+                    orig_name = Path(parsed.path).name
+                    target_dir = Path(imgs_dir)
+                    target_dir.mkdir(parents=True, exist_ok=True)
+                    # determine extension: prefer existing extension, otherwise infer from content-type
+                    ext = Path(orig_name).suffix
+                    r = session.get(img_url, headers={"User-Agent": DEFAULT_USER_AGENT}, timeout=15)
+                    r.raise_for_status()
+                    if not ext:
+                        ctype = r.headers.get("Content-Type", "")
+                        if "jpeg" in ctype or "jpg" in ctype:
+                            ext = ".jpg"
+                        elif "png" in ctype:
+                            ext = ".png"
+                        elif "webp" in ctype:
+                            ext = ".webp"
+                        else:
+                            ext = ".jpg"
+                    # prefer using product code for filename to avoid collisions
+                    codefn = info.get("code") or None
+                    if codefn:
+                        filename = f"{codefn}{ext}"
+                    else:
+                        filename = orig_name + ext if not Path(orig_name).suffix else orig_name
+                    img_path = target_dir / filename
+                    # write image to disk
+                    with open(img_path, "wb") as f:
+                        f.write(r.content)
+                    record["image_local"] = str(img_path)
+                    # create thumbnail preview
+                    if PIL_AVAILABLE:
+                        try:
+                            with Image.open(io.BytesIO(r.content)) as im:
+                                im.thumbnail((thumb_size, thumb_size))
+                                preview_name = img_path.stem + "_preview" + img_path.suffix
+                                preview_path = target_dir / preview_name
+                                # infer format from extension
+                                fmt = None
+                                sfx = img_path.suffix.lower()
+                                if sfx in (".jpg", ".jpeg"):
+                                    fmt = "JPEG"
+                                elif sfx == ".png":
+                                    fmt = "PNG"
+                                elif sfx == ".webp":
+                                    fmt = "WEBP"
+                                im.save(preview_path, format=fmt) if fmt else im.save(preview_path)
+                                record["image_preview_local"] = str(preview_path)
+                        except Exception:
+                            # continue without preview
+                            pass
+                except Exception as exc:
+                    record["image_error"] = str(exc)
+            write_record(record)
+            time.sleep(delay)
+    finally:
+        # Guarantee CSV file is flushed and closed even if an unhandled exception occurs
+        if csv_file:
+            csv_file.close()
 
 
 def render_page_with_playwright(url: str, timeout: int = 30) -> str:

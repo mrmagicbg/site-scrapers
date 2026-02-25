@@ -12,7 +12,9 @@ dependencies = [
   "requests==2.31.0",
   "Pillow==10.1.0",
 ]
-optional-dependencies = [
-  "playwright>=1.40.0",
-  "pytest>=7.0.0",
-]
+
+[project.optional-dependencies]
+# install with: pip install -e ".[playwright]"
+playwright = ["playwright>=1.40.0"]
+# install dev/test deps with: pip install -e ".[dev]"
+dev = ["pytest>=7.0.0"]

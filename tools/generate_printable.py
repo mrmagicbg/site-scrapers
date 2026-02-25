@@ -35,21 +35,28 @@ def render_cards_html(records, title: str = "Products", per_page: int = 6, lang:
         "<html><head><meta charset=\"utf-8\">",
         f"<title>{html.escape(title)}</title>",
         "<style>",
-        "@page { size: A4; margin: 18mm; }",
-        "body { font-family: Arial, Helvetica, sans-serif; color: #111; margin: 0; padding: 0; }",
-        "header { text-align: center; margin-bottom: 8mm; }",
-        "h1 { font-size: 20px; margin: 0 0 4px 0; }",
-        "p.meta { font-size: 12px; margin: 0 0 12px 0; color: #444 }",
-    ".grid { display: flex; flex-wrap: wrap; gap: 12px; }",
-    # three cards per row: use ~33.333% minus gap compensation
-    ".card { box-sizing: border-box; width: calc(33.333% - 8px); display:flex; gap:12px; padding:8px; border:1px solid #ddd; border-radius:6px; background:#fff; }",
-    # slightly smaller image to fit three columns comfortably on A4
-    ".card img { width:100px; height:100px; object-fit:cover; border-radius:4px; }",
-        ".card .info { flex:1; display:flex; flex-direction:column; justify-content:space-between; }",
-        ".card .name { font-size:14px; font-weight:600; margin-bottom:6px }",
-        ".card .meta { font-size:12px; color:#333 }",
-        ".small { font-size:11px; color:#666 }",
-    "@media print { .card { width: calc(33.333% - 8px); } .no-print { display:none } }",
+        # Page setup
+        "@page { size: A4; margin: 14mm 16mm; }",
+        # Modern system font stack — Inter if available, otherwise OS defaults
+        "body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif; color: #1a1a2e; margin: 0; padding: 0; line-height: 1.4; }",
+        # Header
+        "header { text-align: center; margin-bottom: 7mm; padding-bottom: 4mm; border-bottom: 2px solid #e2e8f0; }",
+        "h1 { font-size: 20px; font-weight: 700; margin: 0 0 3px 0; color: #1a1a2e; letter-spacing: -0.3px; }",
+        "p.meta { font-size: 11px; margin: 0; color: #64748b; }",
+        # Grid of cards
+        ".grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }",
+        # Product card: left=image, right=info
+        ".card { box-sizing: border-box; display: flex; gap: 10px; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; overflow: hidden; }",
+        ".card img { width: 88px; height: 88px; object-fit: cover; border-radius: 6px; flex-shrink: 0; border: 1px solid #f1f5f9; }",
+        ".card .info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }",
+        ".card .name { font-size: 13px; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }",
+        # Price chip
+        ".card .price-chip { display: inline-block; font-size: 12px; font-weight: 700; color: #ffffff; background: #7c3aed; border-radius: 4px; padding: 2px 7px; margin-bottom: 4px; }",
+        ".card .meta-row { font-size: 10px; color: #64748b; margin: 1px 0; }",
+        # Page break
+        ".page { page-break-after: always; }",
+        ".page:last-child { page-break-after: auto; }",
+        "@media print { .card { break-inside: avoid; } .no-print { display: none; } }",
         "</style>",
         "</head><body>",
         "<header>",
@@ -102,9 +109,16 @@ def render_cards_html(records, title: str = "Products", per_page: int = 6, lang:
             qty_parts.append(f"{total_label}: {q_total} {q_total_unit}")
         qty_display = ' — '.join(qty_parts) if qty_parts else ''
 
-        card = f'''<article class="card"><img src="{html.escape(img)}" alt=""><div class="info"><div><div class="name">{html.escape(name)}</div><div class="meta">{html.escape(tr['price'])}: {html.escape(price_display)}</div><div class="small">{html.escape(tr['code'])}: {html.escape(str(code))}</div>''' \
-               + (f"<div class=\"small\">{html.escape(qty_label)}: {html.escape(qty_display)}</div>" if qty_display else "") \
-               + "</div></div></article>"
+        card = (
+            f'<article class="card">'
+            f'<img src="{html.escape(img)}" alt="" loading="lazy">'
+            f'<div class="info">'
+            f'<div class="name">{html.escape(name)}</div>'
+            f'<span class="price-chip">{html.escape(price_display)}</span>'
+            f'<div class="meta-row">{html.escape(tr["code"])}: {html.escape(str(code))}</div>'
+            + (f'<div class="meta-row">{html.escape(qty_label)}: {html.escape(qty_display)}</div>' if qty_display else "")
+            + "</div></article>"
+        )
         parts.append(card)
 
         if (i + 1) % per_page == 0 or i == len(records) - 1:
@@ -150,20 +164,20 @@ def render_table_html(records, title: str = "Products", lang: str = "en"):
         "<html><head><meta charset=\"utf-8\">",
         f"<title>{html.escape(title)}</title>",
         "<style>",
-        "@page { size: A4 landscape; margin: 10mm; }",
-        "body { font-family: Arial, sans-serif; font-size: 9px; margin: 0; padding: 0; }",
-        "header { text-align: center; margin-bottom: 5mm; }",
-        "h1 { font-size: 16px; margin: 0 0 2px 0; }",
-        "p.meta { font-size: 10px; margin: 0 0 8px 0; color: #666; }",
-        "h2 { font-size: 12px; margin: 8px 0 4px 0; color: #333; page-break-inside: avoid; }",
-        "table { width: 100%; border-collapse: collapse; margin-bottom: 8px; page-break-inside: avoid; }",
-        "td { width: 10%; padding: 2px; border: 1px solid #ddd; vertical-align: top; text-align: center; }",
-        "td img { width: 30px; height: 30px; object-fit: cover; display: block; margin: 0 auto 2px auto; }",
-        ".product-name { font-weight: bold; font-size: 8px; margin-bottom: 1px; line-height: 1.1; }",
-        ".product-price { color: #d63384; font-weight: bold; font-size: 8px; margin-bottom: 1px; }",
-        ".product-qty { color: #666; font-size: 7px; margin-bottom: 1px; }",
-        ".product-code { color: #666; font-size: 7px; }",
-        "@media print { body { font-size: 8px; } h1 { font-size: 14px; } h2 { font-size: 11px; } }",
+        "@page { size: A4 landscape; margin: 8mm 10mm; }",
+        "body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif; font-size: 8.5px; margin: 0; padding: 0; color: #1a1a2e; line-height: 1.35; }",
+        "header { text-align: center; margin-bottom: 4mm; padding-bottom: 3mm; border-bottom: 2px solid #e2e8f0; }",
+        "h1 { font-size: 15px; font-weight: 700; margin: 0 0 2px 0; color: #1a1a2e; }",
+        "p.meta { font-size: 9px; margin: 0; color: #64748b; }",
+        "h2 { font-size: 11px; font-weight: 700; margin: 6px 0 3px 0; color: #7c3aed; page-break-inside: avoid; border-left: 3px solid #7c3aed; padding-left: 5px; }",
+        "table { width: 100%; border-collapse: collapse; margin-bottom: 6px; page-break-inside: avoid; }",
+        "td { width: 10%; padding: 3px 2px; border: 1px solid #e2e8f0; vertical-align: top; text-align: center; background: #ffffff; }",
+        "td img { width: 28px; height: 28px; object-fit: cover; display: block; margin: 0 auto 2px auto; border-radius: 3px; }",
+        ".product-name { font-weight: 600; font-size: 7.5px; margin-bottom: 2px; line-height: 1.2; }",
+        ".product-price { color: #ffffff; background: #7c3aed; font-weight: 700; font-size: 7.5px; border-radius: 3px; padding: 1px 4px; display: inline-block; margin-bottom: 2px; }",
+        ".product-qty { color: #64748b; font-size: 7px; margin-bottom: 1px; }",
+        ".product-code { color: #94a3b8; font-size: 6.5px; }",
+        "@media print { body { font-size: 7.5px; } h1 { font-size: 13px; } h2 { font-size: 10px; } td { break-inside: avoid; } }",
         "</style>",
         "</head><body>",
         "<header>",

@@ -1,7 +1,8 @@
 #!/bin/bash
 # Script to validate the enhanced quantity extraction solution
 
-cd /home/mrmagic/Code/GitHub/site-scrapers
+# Navigate to project root regardless of from where the script is invoked
+cd "$(dirname "$(realpath "$0")")"
 
 echo "=== QUANTITY EXTRACTION VALIDATION SCRIPT ==="
 echo "Testing enhanced solution across diverse categories"
