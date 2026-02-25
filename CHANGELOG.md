@@ -2,6 +2,43 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.1.1] - 2026-02-26 — Portable Scripts, CSV Safety, Modern Print UI
+
+### Fixed
+- **Hardcoded absolute paths** in `full_export.sh` and `validate_solution.sh`:
+  both contained `cd /home/mrmagic/Code/GitHub/site-scrapers` which made them
+  unusable on any other machine or clone path. Replaced with
+  `cd "$(dirname "$(realpath "$0")")"` for portable, location-independent
+  execution.
+- **`pyproject.toml` invalid `optional-dependencies`**: The field was a plain
+  list (invalid per PEP 517/621). Converted to a proper
+  `[project.optional-dependencies]` table with named groups `playwright` and
+  `dev`, each with usage comments (`pip install -e ".[playwright]"`)
+- **CSV file not closed on error in `ebag_runner.py`**: The file handle was
+  closed via a simple `if csv_file: csv_file.close()` at the end of the function,
+  which was skipped if an unhandled exception occurred mid-run. Wrapped the URL
+  processing loop in `try: ... finally:` to guarantee the file is always closed
+  and flushed, even on exceptions.
+
+### Changed — Print Output Visual Modernization (`tools/generate_printable.py`)
+- **Cards layout**:
+  - Modern font stack: `Inter`, `ui-sans-serif`, `system-ui`, `-apple-system`
+  - Tighter A4 margins (`14mm 16mm` instead of `18mm`)
+  - CSS `grid` instead of `flex-wrap` for exact 3-column layout
+  - Rounded card corners (`border-radius: 8px`)
+  - Price displayed as a purple chip badge (`background: #7c3aed`) instead of
+    plain `color: #d63384` text
+  - Product name clamped to 2 lines (`-webkit-line-clamp: 2`) to prevent
+    overflow on long names
+- **Table layout**:
+  - Same modern font stack
+  - Category section headings styled with purple left-border accent
+  - Price values rendered as color chip badges (matching card style)
+  - Reduced row/cell padding for denser landscape A4 output
+  - Table `td` marked `break-inside: avoid` to reduce mid-cell page breaks
+
+---
+
 ## [2.1.0] - 2025-09-29 - Dual Export Formats & Compact Table Layout
 
 ### New Features
